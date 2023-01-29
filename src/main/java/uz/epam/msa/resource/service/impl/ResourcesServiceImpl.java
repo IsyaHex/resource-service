@@ -35,6 +35,7 @@ public class ResourcesServiceImpl implements ResourcesService {
     public ResourceDTO saveResource(AudioDataBinaryDTO data) throws ResourceValidationException {
         Resource resource = new Resource();
         // audio data add
+        // after repository.save -> make a call to the song-microservice and retrieve ResourceDTO from there
         Resource r = repository.save(resource);
         if(r == null)
             throw new ResourceValidationException();

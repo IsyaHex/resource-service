@@ -31,7 +31,7 @@ public class ResourceServiceController {
 
     @DeleteMapping("?id={ids}")
     public ResourcesDTO deleteResources(@PathVariable String ids) throws Exception {
-        if(ids.matches("((?<!^,)\\\\d+(,(?!$)|$))+") || ids.length() >= 200)
+        if(ids.matches("((?<!^,)\\\\d+(,(?!$)|$))+") || ids.length() < 200)
             return service.deleteResources(ids);
         else
             throw new Exception("An internal server error has occurred");
