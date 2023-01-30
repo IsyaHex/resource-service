@@ -28,7 +28,7 @@
             <column name="size" type="number">
                 <constraints nullable="false"/>
             </column>
-            <column name="deleted" type="boolean">
+            <column name="deleted" type="boolean" defaultValue="false">
                 <constraints nullable="false"/>
             </column>
         </createTable>
