@@ -22,16 +22,17 @@
             <column name="name" type="varchar2(255)">
                 <constraints nullable="false"/>
             </column>
-            <column name="contentType" type="varchar2(255)">
+            <column name="content_type" type="varchar2(255)">
                 <constraints nullable="false"/>
             </column>
             <column name="size" type="number">
                 <constraints nullable="false"/>
             </column>
-            <column name="deleted" type="boolean" defaultValue="false">
+            <column name="deleted" type="boolean">
                 <constraints nullable="false"/>
             </column>
         </createTable>
+        <addAutoIncrement columnDataType="number" columnName="id" incrementBy="1" startWith="1" tableName="resource"/>
 
         <setTableRemarks tableName="resource" remarks="List of resources"/>
     </changeSet>
