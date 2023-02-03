@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import uz.epam.msa.resource.dto.ErrorDto;
-import uz.epam.msa.resource.exception.InternalServerError;
+import uz.epam.msa.resource.exception.InternalServerErrorException;
 import uz.epam.msa.resource.exception.ResourceNotFoundException;
 import uz.epam.msa.resource.exception.ResourceValidationException;
 
@@ -28,8 +28,8 @@ public class ExceptionProcessor extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(new ErrorDto(exception.getMessage(), RESOURCE_NOT_FOUND_CODE), HttpStatus.NOT_FOUND);
     }
 
-    @ExceptionHandler(value = InternalServerError.class)
-    public ResponseEntity<ErrorDto> handleResourceNotFoundException(InternalServerError exception) {
+    @ExceptionHandler(value = InternalServerErrorException.class)
+    public ResponseEntity<ErrorDto> handleResourceNotFoundException(InternalServerErrorException exception) {
         return new ResponseEntity<>(new ErrorDto(exception.getMessage(), INTERNAL_SERVER_ERROR), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

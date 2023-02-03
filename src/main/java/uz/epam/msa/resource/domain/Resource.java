@@ -11,7 +11,6 @@ public class Resource {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    private String path;
     private String name;
     private String contentType;
     private Long size;
