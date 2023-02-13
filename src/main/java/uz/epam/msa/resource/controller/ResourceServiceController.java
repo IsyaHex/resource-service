@@ -11,6 +11,7 @@ import uz.epam.msa.resource.dto.ResourceDTO;
 import uz.epam.msa.resource.exception.ResourceNotFoundException;
 import uz.epam.msa.resource.exception.ResourceValidationException;
 import uz.epam.msa.resource.service.ResourcesService;
+import uz.epam.msa.resource.util.ResourceProducer;
 import uz.epam.msa.resource.util.ResourceUtil;
 
 import javax.validation.constraints.Max;
@@ -22,16 +23,19 @@ public class ResourceServiceController {
 
     private final ResourcesService service;
     private final ResourceUtil util;
+    private final ResourceProducer producer;
 
-    public ResourceServiceController(ResourcesService service, ResourceUtil generator) {
+    public ResourceServiceController(ResourcesService service, ResourceUtil generator, ResourceProducer producer) {
         this.service = service;
         this.util = generator;
+        this.producer = producer;
     }
 
     @PostMapping
     public ResponseEntity<AudioDataBinaryDTO> uploadResource(@RequestParam("file") MultipartFile data) throws ResourceValidationException {
         AudioDataBinaryDTO dto = service.saveResource(data);
         dto.setPath(util.createFileDownloadLink(dto.getId()));
+        producer.sendMessage(dto.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
