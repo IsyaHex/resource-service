@@ -1,6 +1,5 @@
 package uz.epam.msa.resource.configuration;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -17,7 +16,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
-@Slf4j
 public class KafkaTopicConfiguration {
 
     @Value("${app.kafka.topic.name}")
