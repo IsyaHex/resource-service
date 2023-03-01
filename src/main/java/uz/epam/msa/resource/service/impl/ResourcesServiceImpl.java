@@ -2,9 +2,6 @@ package uz.epam.msa.resource.service.impl;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
-import com.amazonaws.util.IOUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +18,7 @@ import uz.epam.msa.resource.exception.ResourceNotFoundException;
 import uz.epam.msa.resource.exception.ResourceValidationException;
 import uz.epam.msa.resource.repository.ResourcesRepository;
 import uz.epam.msa.resource.service.ResourcesService;
+import uz.epam.msa.resource.util.AwsUtil;
 
 import javax.transaction.Transactional;
 import java.io.File;
@@ -38,15 +36,13 @@ public class ResourcesServiceImpl implements ResourcesService {
     private final ResourcesRepository repository;
     private final ModelMapper mapper;
     private final AmazonS3 s3Client;
+    private final AwsUtil awsUtil;
 
-    @Value("${application.bucket.name}")
-    private String bucketName;
-
-
-    public ResourcesServiceImpl(ResourcesRepository repository, ModelMapper mapper, AmazonS3 s3Client) {
+    public ResourcesServiceImpl(ResourcesRepository repository, ModelMapper mapper, AmazonS3 s3Client, AwsUtil awsUtil) {
         this.repository = repository;
         this.mapper = mapper;
         this.s3Client = s3Client;
+        this.awsUtil = awsUtil;
     }
 
     @Override
@@ -55,7 +51,7 @@ public class ResourcesServiceImpl implements ResourcesService {
                 .filter(res -> !res.isDeleted())
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.RESOURCE_NOT_FOUND_EXCEPTION));
         return new ResourceDTO(resource.getContentType(),
-                downloadFile(resource.getId() + Constants.UNDERSCORE + resource.getName()));
+                awsUtil.downloadFile(resource.getId() + Constants.UNDERSCORE + resource.getName()));
     }
 
     @Override
@@ -69,7 +65,7 @@ public class ResourcesServiceImpl implements ResourcesService {
             resource.setDeleted(false);
             resource = repository.save(resource);
             File file = convertMultipartFileToFile(data);
-            s3Client.putObject(new PutObjectRequest(bucketName,
+            s3Client.putObject(new PutObjectRequest(Constants.BUCKET_NAME,
                     resource.getId() + Constants.UNDERSCORE + resource.getName(), file));
             file.delete();
         } catch (Exception e) {
@@ -89,7 +85,7 @@ public class ResourcesServiceImpl implements ResourcesService {
                 .map(Optional::get)
                 .filter(file -> !file.isDeleted())
                 .peek(file -> file.setDeleted(true))
-                .peek(file -> deleteFile(file.getId() + Constants.UNDERSCORE + file.getName()))
+                .peek(file -> awsUtil.deleteFile(file.getId() + Constants.UNDERSCORE + file.getName()))
                 .map(repository::save)
                 .map(Resource::getId)
                 .collect(Collectors.toList()));
@@ -98,26 +94,12 @@ public class ResourcesServiceImpl implements ResourcesService {
 
     private File convertMultipartFileToFile(MultipartFile file) {
         File convertedFile = new File(Objects.requireNonNull(file.getOriginalFilename()));
-        try(FileOutputStream fos = new FileOutputStream(convertedFile)) {
+        try (FileOutputStream fos = new FileOutputStream(convertedFile)) {
             fos.write(file.getBytes());
         } catch (IOException e) {
             log.error(e.getMessage());
             throw new InternalServerErrorException();
         }
         return convertedFile;
-    }
-
-    private byte[] downloadFile(String fileName) {
-        S3Object s3Object = s3Client.getObject(bucketName, fileName);
-        try(S3ObjectInputStream inputStream = s3Object.getObjectContent()) {
-            return IOUtils.toByteArray(inputStream);
-        } catch (IOException e) {
-            log.error(e.getMessage());
-            throw new InternalServerErrorException();
-        }
-    }
-
-    private void deleteFile(String fileName) {
-        s3Client.deleteObject(bucketName, fileName);
     }
 }
