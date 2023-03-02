@@ -46,7 +46,7 @@ public class ResourcesServiceImplTest {
 
     @Test
     void findById() {
-        String contentType = "test-content";
+        String contentType = "audio/mpeg";
         Resource resource = getResource();
         String fileName = resource.getId() + "_" + resource.getName();
 
@@ -65,7 +65,7 @@ public class ResourcesServiceImplTest {
     @Test
     void saveResource() {
         String name = "test";
-        String contentType = "test-content";
+        String contentType = "audio/mpeg";
         long size = 99999L;
 
         Resource resource = getResource();
@@ -101,7 +101,7 @@ public class ResourcesServiceImplTest {
         resource.setSize(99999L);
         resource.setName("test");
         resource.setDeleted(false);
-        resource.setContentType("test-content");
+        resource.setContentType("audio/mpeg");
 
         return resource;
     }

@@ -38,6 +38,10 @@ public class ResourcesServiceImpl implements ResourcesService {
     private final AmazonS3 s3Client;
     private final AwsUtil awsUtil;
 
+    @Value("${aws.cloud.bucket.name}")
+    private String bucketName;
+
+
     public ResourcesServiceImpl(ResourcesRepository repository, ModelMapper mapper, AmazonS3 s3Client, AwsUtil awsUtil) {
         this.repository = repository;
         this.mapper = mapper;
@@ -57,6 +61,8 @@ public class ResourcesServiceImpl implements ResourcesService {
     @Override
     @Transactional
     public AudioDataBinaryDTO saveResource(MultipartFile data) throws ResourceValidationException {
+        if(!Constants.AUDIO_FILE_CONTENT_TYPE.equals(data.getContentType()))
+            throw new ResourceValidationException(Constants.VALIDATION_EXCEPTION);
         Resource resource = new Resource();
         try {
             resource.setName(StringUtils.cleanPath(Objects.requireNonNull(data.getOriginalFilename())));
@@ -65,7 +71,7 @@ public class ResourcesServiceImpl implements ResourcesService {
             resource.setDeleted(false);
             resource = repository.save(resource);
             File file = convertMultipartFileToFile(data);
-            s3Client.putObject(new PutObjectRequest(Constants.BUCKET_NAME,
+            s3Client.putObject(new PutObjectRequest(bucketName,
                     resource.getId() + Constants.UNDERSCORE + resource.getName(), file));
             file.delete();
         } catch (Exception e) {

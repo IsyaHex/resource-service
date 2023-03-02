@@ -31,7 +31,9 @@ public class ResourceServiceController {
         this.producer = producer;
     }
 
-    @PostMapping
+    @PostMapping(
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AudioDataBinaryDTO> uploadResource(@RequestParam("file") MultipartFile data) throws ResourceValidationException {
         AudioDataBinaryDTO dto = service.saveResource(data);
         dto.setPath(util.createFileDownloadLink(dto.getId()));
