@@ -15,6 +15,4 @@ public class Constants {
     public static final int RANGE_BEGIN_ARRAY_INDEX = 0;
     public static final int RANGE_END_ARRAY_INDEX = 1;
     public static final String AUDIO_FILE_CONTENT_TYPE = "audio/mpeg";
-
-    public static final String BUCKET_NAME = "msa-resources-bucket";
 }

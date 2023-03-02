@@ -5,8 +5,8 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.util.IOUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import uz.epam.msa.resource.constant.Constants;
 import uz.epam.msa.resource.exception.InternalServerErrorException;
 
 import java.io.IOException;
@@ -15,6 +15,9 @@ import java.io.IOException;
 @Component
 public class AwsUtil {
 
+
+    @Value("${aws.cloud.bucket.name}")
+    private String bucketName;
     private final AmazonS3 s3Client;
 
     public AwsUtil(AmazonS3 s3Client) {
@@ -22,7 +25,7 @@ public class AwsUtil {
     }
 
     public byte[] downloadFile(String fileName) {
-        S3Object s3Object = s3Client.getObject(Constants.BUCKET_NAME, fileName);
+        S3Object s3Object = s3Client.getObject(bucketName, fileName);
         try(S3ObjectInputStream inputStream = s3Object.getObjectContent()) {
             log.info(fileName);
             return IOUtils.toByteArray(inputStream);
@@ -34,6 +37,6 @@ public class AwsUtil {
 
     public void deleteFile(String fileName) {
         log.info(fileName);
-        s3Client.deleteObject(Constants.BUCKET_NAME, fileName);
+        s3Client.deleteObject(bucketName, fileName);
     }
 }
