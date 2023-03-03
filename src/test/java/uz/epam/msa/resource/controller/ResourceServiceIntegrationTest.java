@@ -67,7 +67,7 @@ public class ResourceServiceIntegrationTest {
         MockMultipartFile file
                 = new MockMultipartFile(
                 "file",
-                "hello.txt",
+                "test-file.txt",
                 "audio/mpeg",
                 "Hello, World!".getBytes()
         );
@@ -83,8 +83,7 @@ public class ResourceServiceIntegrationTest {
 
         ResponseEntity<byte[]> response = template.getForEntity(URL + "/" + 1, byte[].class);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-
-//        deleteData(file, fileName);
+        file.delete();
     }
 
     @Test
@@ -97,7 +96,7 @@ public class ResourceServiceIntegrationTest {
                 HttpMethod.DELETE, HttpEntity.EMPTY, DeletedResourcesDTO.class);
 
         assertEquals(HttpStatus.ACCEPTED, responseEntity.getStatusCode());
-//        deleteData(file, fileName);
+        file.delete();
     }
 
     private File getSampleFile() {
@@ -110,8 +109,4 @@ public class ResourceServiceIntegrationTest {
         return file;
     }
 
-    private void deleteData(File file, String fileName) {
-        s3Client.deleteObject(bucketName, fileName);
-        file.delete();
-    }
 }
