@@ -10,7 +10,7 @@ public class Constants {
     public static final String INCORRECT_RANGE_HEADER_VALUE = "Input range is incorrect";
     public static final String RANGE_HEADER_PARAMETER_VALUE_KEY = "bytes=";
     public static final String RANGE_SEPARATOR = "-";
-    public static final String NUMBER_REGEX = "[0-9]";
+    public static final String NUMBER_REGEX = "^\\d+$";
     public static final int RANGES_VALUE_COUNT = 2;
     public static final int RANGE_BEGIN_ARRAY_INDEX = 0;
     public static final int RANGE_END_ARRAY_INDEX = 1;
