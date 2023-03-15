@@ -1,0 +1,4 @@
+FROM adoptopenjdk:11-jre-hotspot
+MAINTAINER resource_processor
+COPY jars/resource-processor-0.0.1-SNAPSHOT.jar resource-processor.jar
+ENTRYPOINT ["java","-jar","/resource-processor.jar"]

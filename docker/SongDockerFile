@@ -1,0 +1,4 @@
+FROM adoptopenjdk:11-jre-hotspot
+MAINTAINER song-service
+COPY jars/song-service-0.0.1-SNAPSHOT.jar song-service.jar
+ENTRYPOINT ["java","-jar","/song-service.jar"]
