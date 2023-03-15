@@ -1,0 +1,75 @@
+version: '3.7'
+
+services:
+  resource_processor:
+    image: 'resource-processor.jar'
+    container_name: 'resource_processor'
+    build:
+      context: .
+      dockerfile: ProcessorDockerFIle
+    ports:
+      - "1113:1113"
+    depends_on:
+      - song_service
+      - resource_service
+      - kafka
+    env_file:
+      - env/resource-processor.env
+
+  msa_resources_db:
+    image: 'postgres:14-alpine3.14'
+    container_name: 'msa_resources_db'
+    restart: always
+    env_file:
+      - env/resources-db.env
+
+  resource_service:
+    image: 'resource-service.jar'
+    container_name: 'resource_service'
+    build:
+      context: .
+      dockerfile: ResourceDockerFile
+    ports:
+      - "1111:1111"
+    depends_on:
+      - msa_resources_db
+      - kafka
+    env_file:
+      - env/resource-service.env
+
+  song_service_db:
+    image: 'postgres:14-alpine3.14'
+    container_name: 'song_service_db'
+    restart: always
+    env_file:
+      - env/song-db.env
+
+  song_service:
+    image: 'song-service.jar'
+    container_name: 'song_service'
+    build:
+      context: .
+      dockerfile: SongDockerFile
+    ports:
+      - "1112:1112"
+    depends_on:
+      - song_service_db
+    env_file:
+      - env/song-service.env
+
+  zookeeper:
+    image: elevy/zookeeper:latest
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    ports:
+      - "9092:9092"
+    env_file:
+      - env/kafka.env
+    depends_on:
+      - zookeeper
+    links:
+      - zookeeper:zookeeper
