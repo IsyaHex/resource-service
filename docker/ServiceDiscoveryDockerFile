@@ -1,0 +1,4 @@
+FROM adoptopenjdk:11-jre-hotspot
+MAINTAINER eureka-server
+COPY jars/service-discovery-0.0.1-SNAPSHOT.jar service-discovery.jar
+ENTRYPOINT ["java","-jar","/service-discovery.jar"]

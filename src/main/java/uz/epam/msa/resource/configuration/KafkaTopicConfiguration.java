@@ -29,6 +29,7 @@ public class KafkaTopicConfiguration {
     @Bean
     public KafkaAdmin kafkaAdmin() {
         Map<String, Object> configs = new HashMap<>();
+
         configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
         return new KafkaAdmin(configs);
     }

@@ -1,0 +1,4 @@
+FROM adoptopenjdk:11-jre-hotspot
+MAINTAINER service-configuration
+COPY jars/spring-config-server-0.0.1-SNAPSHOT.jar service-config.jar
+ENTRYPOINT ["java","-jar","/service-config.jar"]
