@@ -1,6 +1,23 @@
 version: '3.7'
 
 services:
+  zookeeper:
+    image: elevy/zookeeper:latest
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    ports:
+      - "9092:9092"
+    env_file:
+      - env/kafka.env
+    depends_on:
+      - zookeeper
+    links:
+      - zookeeper:zookeeper
+
   service-configuration:
     build:
       dockerfile: ServiceConfigDockerFile
@@ -21,31 +38,32 @@ services:
       - env/service-discovery.env
 
   api-gateway:
+    image: api-gateway
+    container_name: api-gateway
     build:
       dockerfile: GatewayDockerFile
-    image: api-gateway.jar
-    container_name: api-gateway
     ports:
       - "1211:1211"
     depends_on:
-      - resource_service
-      - song_service
       - eureka-server
+      - resource-service
+      - song-service
     env_file:
       - env/api-gateway.env
 
-  resource_processor:
+  resource-processor:
     image: 'resource-processor.jar'
-    container_name: 'resource_processor'
+    container_name: 'resource-processor'
     build:
       context: .
       dockerfile: ProcessorDockerFile
     ports:
       - "1113:1113"
     depends_on:
-      - song_service
-      - resource_service
+      - song-service
+      - resource-service
       - kafka
+    links:
       - service-configuration
     env_file:
       - env/resource-processor.env
@@ -57,9 +75,9 @@ services:
     env_file:
       - env/resources-db.env
 
-  resource_service:
+  resource-service:
     image: 'resource-service.jar'
-    container_name: 'resource_service'
+    container_name: 'resource-service'
     build:
       context: .
       dockerfile: ResourceDockerFile
@@ -79,9 +97,9 @@ services:
     env_file:
       - env/song-db.env
 
-  song_service:
+  song-service:
     image: 'song-service.jar'
-    container_name: 'song_service'
+    container_name: 'song-service'
     build:
       context: .
       dockerfile: SongDockerFile
@@ -93,19 +111,23 @@ services:
     env_file:
       - env/song-service.env
 
-  zookeeper:
-    image: elevy/zookeeper:latest
-    container_name: zookeeper
-    ports:
-      - "2181:2181"
-
-  kafka:
-    image: wurstmeister/kafka:latest
-    ports:
-      - "9092:9092"
+  storage_service_db:
+    image: 'postgres:14-alpine3.14'
+    container_name: 'storage_service_db'
+    restart: always
     env_file:
-      - env/kafka.env
+      - env/storage-db.env
+
+  storage-service:
+    image: 'storage-service.jar'
+    container_name: 'storage-service'
+    build:
+      context: .
+      dockerfile: StorageDockerFile
+    ports:
+      - "1115:1115"
     depends_on:
-      - zookeeper
-    links:
-      - zookeeper:zookeeper
+      - storage_service_db
+      - eureka-server
+    env_file:
+      - env/storage-service.env

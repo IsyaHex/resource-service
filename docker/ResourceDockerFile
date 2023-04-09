@@ -1,4 +1,4 @@
 FROM adoptopenjdk:11-jre-hotspot
-MAINTAINER resource_service
+MAINTAINER resource-service
 COPY jars/resource-service-0.0.1-SNAPSHOT.jar resource-service.jar
 ENTRYPOINT ["java","-jar","/resource-service.jar"]
