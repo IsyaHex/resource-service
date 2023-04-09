@@ -1,19 +1,34 @@
 package uz.epam.msa.resource.util;
 
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.vavr.control.Try;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import uz.epam.msa.resource.constant.Constants;
+import uz.epam.msa.resource.dto.GetStorageDTO;
 import uz.epam.msa.resource.dto.ResourceDTO;
 import uz.epam.msa.resource.exception.InternalServerErrorException;
 import uz.epam.msa.resource.exception.ResourceValidationException;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 @Component
+@Slf4j
 public class ResourceUtil {
+
+    @Autowired
+    private CircuitBreaker circuitBreaker;
+
     public String createFileDownloadLink(Integer fileId) {
         return ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path("/resources/")
@@ -73,5 +88,24 @@ public class ResourceUtil {
         return Arrays.stream(ranges)
                 .filter(range -> range.matches(Constants.NUMBER_REGEX) && Integer.parseInt(range) < audioFileLength)
                 .count() == Constants.RANGES_VALUE_COUNT;
+    }
+
+
+    public File convertMultipartFileToFile(MultipartFile file) {
+        File convertedFile = new File(Objects.requireNonNull(file.getOriginalFilename()));
+        try (FileOutputStream fos = new FileOutputStream(convertedFile)) {
+            fos.write(file.getBytes());
+        } catch (IOException e) {
+            log.error(e.getMessage());
+            throw new InternalServerErrorException();
+        }
+        return convertedFile;
+    }
+
+    public GetStorageDTO getCircuitBreakerObject(Supplier<GetStorageDTO> supplier, GetStorageDTO methodCall) {
+        Supplier<GetStorageDTO> supplierDTO =
+                CircuitBreaker.decorateSupplier(circuitBreaker, supplier);
+        return Try.ofSupplier(supplierDTO)
+                .recover(throwable -> methodCall).get();
     }
 }

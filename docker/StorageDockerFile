@@ -1,0 +1,4 @@
+FROM adoptopenjdk:11-jre-hotspot
+MAINTAINER storage-service
+COPY jars/storage-service-0.0.1-SNAPSHOT.jar storage-service.jar
+ENTRYPOINT ["java","-jar","/storage-service.jar"]

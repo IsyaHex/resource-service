@@ -12,6 +12,7 @@ import javax.naming.SizeLimitExceededException;
 
 public interface ResourcesService {
     ResourceDTO findById(Integer id) throws ResourceNotFoundException;
+    ResourceDTO findByIdInternal(Integer id) throws ResourceNotFoundException;
     AudioDataBinaryDTO saveResource(MultipartFile data) throws ResourceValidationException;
     DeletedResourcesDTO deleteResources(String ids) throws SizeLimitExceededException;
 }

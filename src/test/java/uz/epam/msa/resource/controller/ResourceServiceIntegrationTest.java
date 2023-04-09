@@ -5,7 +5,6 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -46,9 +45,6 @@ public class ResourceServiceIntegrationTest {
     @Autowired
     private AmazonS3 s3Client;
 
-    @Value("${aws.cloud.bucket.name}")
-    private String bucketName;
-
     private static final String URL = "http://localhost:1188/resources";
 
     @BeforeEach
@@ -79,17 +75,20 @@ public class ResourceServiceIntegrationTest {
     void getResource() {
         File file = getSampleFile();
         String fileName = 1 + Constants.UNDERSCORE + "test-name";
+        String bucketName = "msa-resources-bucket-permanent";
         s3Client.putObject(new PutObjectRequest(bucketName, fileName, file));
 
         ResponseEntity<byte[]> response = template.getForEntity(URL + "/" + 1, byte[].class);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
         file.delete();
+        s3Client.deleteObject(bucketName, fileName);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 
     @Test
     void deleteResources() {
         File file = getSampleFile();
         String fileName = 1 + Constants.UNDERSCORE + "test-name";
+        String bucketName = "msa-resources-bucket-permanent";
         s3Client.putObject(new PutObjectRequest(bucketName, fileName, file));
 
         ResponseEntity<DeletedResourcesDTO> responseEntity = template.exchange(URL + "?id=1",
