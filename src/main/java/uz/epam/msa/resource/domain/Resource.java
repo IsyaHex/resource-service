@@ -15,5 +15,5 @@ public class Resource {
     private String contentType;
     private Long size;
     private boolean deleted;
-
+    private String status;
 }

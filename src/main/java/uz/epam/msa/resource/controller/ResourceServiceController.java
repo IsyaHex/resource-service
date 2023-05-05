@@ -56,11 +56,6 @@ public class ResourceServiceController {
                         .body(util.createMp3Range(dto, rangeHeader));
     }
 
-    @GetMapping("/processing/{id}")
-    public ResponseEntity<byte[]> getResourceInternal(@PathVariable("id") Integer id) throws ResourceNotFoundException {
-        return ResponseEntity.status(HttpStatus.OK).body(service.findByIdInternal(id).getResource());
-    }
-
     @DeleteMapping
     public ResponseEntity<DeletedResourcesDTO> deleteResources(@RequestParam(value = "id") @Max(200) String ids) throws Exception {
         return ResponseEntity.status(HttpStatus.ACCEPTED)

@@ -15,30 +15,29 @@ import java.util.List;
 
 @Component
 @Slf4j
-public class MicroserviceUtil {
+public class StorageManager {
 
     @Value("${api.get.storages}")
     private String API_GET_STORAGES;
 
     public GetStorageDTO getStagingStorage() {
         return getStorages().stream().filter(
-                storage -> storage.getStorageType().equals(Constants.STAGING_STORAGE_TYPE))
+                storage -> storage.getStorageType().equals(Constants.STAGING))
                 .findAny()
                 .orElseThrow(ResourceNotFoundException::new);
     }
 
     public GetStorageDTO getPermanentStorage() {
         return getStorages().stream().filter(
-                storage -> storage.getStorageType().equals(Constants.PERMANENT_STORAGE_TYPE))
+                storage -> storage.getStorageType().equals(Constants.PERMANENT))
                 .findAny()
                 .orElseThrow(ResourceNotFoundException::new);
     }
 
-
     public GetStorageDTO getStagingStorageFallBack() {
         GetStorageDTO stagingStorage = new GetStorageDTO();
         stagingStorage.setId(-1);
-        stagingStorage.setStorageType(Constants.STAGING_STORAGE_TYPE);
+        stagingStorage.setStorageType(Constants.STAGING);
         stagingStorage.setBucket(Constants.STAGING_BUCKET);
 
         return stagingStorage;
@@ -47,7 +46,7 @@ public class MicroserviceUtil {
     public GetStorageDTO getPermanentStorageFallBack() {
         GetStorageDTO permanentStorage = new GetStorageDTO();
         permanentStorage.setId(-2);
-        permanentStorage.setStorageType(Constants.PERMANENT_STORAGE_TYPE);
+        permanentStorage.setStorageType(Constants.PERMANENT);
         permanentStorage.setBucket(Constants.PERMANENT_BUCKET);
 
         return permanentStorage;

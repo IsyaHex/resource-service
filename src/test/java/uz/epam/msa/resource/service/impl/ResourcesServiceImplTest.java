@@ -17,7 +17,7 @@ import uz.epam.msa.resource.dto.ResourceDTO;
 import uz.epam.msa.resource.repository.ResourcesRepository;
 import uz.epam.msa.resource.service.ResourcesService;
 import uz.epam.msa.resource.util.AwsUtil;
-import uz.epam.msa.resource.util.MicroserviceUtil;
+import uz.epam.msa.resource.util.StorageManager;
 import uz.epam.msa.resource.util.ResourceUtil;
 
 import javax.naming.SizeLimitExceededException;
@@ -45,11 +45,11 @@ public class ResourcesServiceImplTest {
     @Mock
     private ResourceUtil resourceUtil;
     @Mock
-    private MicroserviceUtil microserviceUtil;
+    private StorageManager storageManager;
 
     @BeforeEach
     void init () {
-        service = new ResourcesServiceImpl(repository, mapper, s3Client, awsUtil, resourceUtil, microserviceUtil);
+        service = new ResourcesServiceImpl(repository, mapper, s3Client, awsUtil, resourceUtil, storageManager);
     }
 
     @Test
@@ -70,7 +70,7 @@ public class ResourcesServiceImplTest {
         storageDTO.setStorageType("testStorageType");
 
         resourceUtil.getCircuitBreakerObject(
-                microserviceUtil::getPermanentStorage, microserviceUtil.getPermanentStorageFallBack());
+                storageManager::getPermanentStorage, storageManager.getPermanentStorageFallBack());
 
         when(repository.findById(0)).thenReturn(Optional.of(resource));
         when(awsUtil.downloadFile(fileName, bucketName)).thenReturn(new byte[]{});

@@ -3,7 +3,6 @@ package uz.epam.msa.resource.service.impl;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
-import io.vavr.control.Try;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +20,7 @@ import uz.epam.msa.resource.exception.ResourceValidationException;
 import uz.epam.msa.resource.repository.ResourcesRepository;
 import uz.epam.msa.resource.service.ResourcesService;
 import uz.epam.msa.resource.util.AwsUtil;
-import uz.epam.msa.resource.util.MicroserviceUtil;
+import uz.epam.msa.resource.util.StorageManager;
 import uz.epam.msa.resource.util.ResourceUtil;
 
 import javax.transaction.Transactional;
@@ -29,7 +28,6 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Service
@@ -41,17 +39,17 @@ public class ResourcesServiceImpl implements ResourcesService {
     private final AmazonS3 s3Client;
     private final AwsUtil awsUtil;
     private final ResourceUtil resourceUtil;
-    private final MicroserviceUtil microserviceUtil;
+    private final StorageManager storageManager;
     @Autowired
     private CircuitBreaker circuitBreaker;
 
-    public ResourcesServiceImpl(ResourcesRepository repository, ModelMapper mapper, AmazonS3 s3Client, AwsUtil awsUtil, ResourceUtil resourceUtil, MicroserviceUtil microserviceUtil) {
+    public ResourcesServiceImpl(ResourcesRepository repository, ModelMapper mapper, AmazonS3 s3Client, AwsUtil awsUtil, ResourceUtil resourceUtil, StorageManager storageManager) {
         this.repository = repository;
         this.mapper = mapper;
         this.s3Client = s3Client;
         this.awsUtil = awsUtil;
         this.resourceUtil = resourceUtil;
-        this.microserviceUtil = microserviceUtil;
+        this.storageManager = storageManager;
     }
 
     @Override
@@ -60,23 +58,12 @@ public class ResourcesServiceImpl implements ResourcesService {
                 .filter(res -> !res.isDeleted())
                 .orElseThrow(() -> new ResourceNotFoundException(Constants.RESOURCE_NOT_FOUND_EXCEPTION));
 
-        GetStorageDTO permanentStorage = resourceUtil.getCircuitBreakerObject(
-                microserviceUtil::getPermanentStorage, microserviceUtil.getPermanentStorageFallBack());
-        log.info(String.format("Permanent storage id -> %s", permanentStorage.getId()));
+        GetStorageDTO storage = resource.getStatus().equals(Constants.STAGING) ?
+                resourceUtil.getCircuitBreakerObject(storageManager::getStagingStorage, storageManager.getStagingStorageFallBack()) :
+                resourceUtil.getCircuitBreakerObject(storageManager::getPermanentStorage, storageManager.getPermanentStorageFallBack());
+        log.info(String.format("Permanent storage id -> %s", storage.getId()));
         return new ResourceDTO(resource.getContentType(),
-                awsUtil.downloadFile(resource.getId() + Constants.UNDERSCORE + resource.getName(), permanentStorage.getBucket()));
-    }
-
-    @Override
-    public ResourceDTO findByIdInternal(Integer id) {
-        Resource resource = repository.findById(id)
-                .filter(res -> !res.isDeleted())
-                .orElseThrow(() -> new ResourceNotFoundException(Constants.RESOURCE_NOT_FOUND_EXCEPTION));
-        GetStorageDTO stagingStorage = resourceUtil.getCircuitBreakerObject(
-                microserviceUtil::getStagingStorage, microserviceUtil.getStagingStorageFallBack());
-        log.info(String.format("Staging storage id -> %s", stagingStorage.getId()));
-        return new ResourceDTO(resource.getContentType(),
-                awsUtil.downloadFile(resource.getId() + Constants.UNDERSCORE + resource.getName(), stagingStorage.getBucket()));
+                awsUtil.downloadFile(resource.getId() + Constants.UNDERSCORE + resource.getName(), storage.getBucket()));
     }
 
     @Override
@@ -90,10 +77,11 @@ public class ResourcesServiceImpl implements ResourcesService {
             resource.setContentType(data.getContentType());
             resource.setSize(data.getSize());
             resource.setDeleted(false);
+            resource.setStatus(Constants.STAGING);
             resource = repository.save(resource);
             File file = resourceUtil.convertMultipartFileToFile(data);
             GetStorageDTO stagingStorage = resourceUtil.getCircuitBreakerObject(
-                    microserviceUtil::getStagingStorage, microserviceUtil.getStagingStorageFallBack());
+                    storageManager::getStagingStorage, storageManager.getStagingStorageFallBack());
             s3Client.putObject(new PutObjectRequest(stagingStorage.getBucket(),
                     resource.getId() + Constants.UNDERSCORE + resource.getName(), file));
             file.delete();
@@ -109,11 +97,8 @@ public class ResourcesServiceImpl implements ResourcesService {
     public DeletedResourcesDTO deleteResources(String ids) {
         DeletedResourcesDTO dto = new DeletedResourcesDTO();
 
-        GetStorageDTO stagingStorage = resourceUtil.getCircuitBreakerObject(
-                microserviceUtil::getStagingStorage, microserviceUtil.getStagingStorageFallBack());
         GetStorageDTO permanentStorage = resourceUtil.getCircuitBreakerObject(
-                microserviceUtil::getPermanentStorage, microserviceUtil.getPermanentStorageFallBack());
-        log.info(String.format("Staging storage id -> %s", stagingStorage.getId()));
+                storageManager::getPermanentStorage, storageManager.getPermanentStorageFallBack());
         log.info(String.format("Permanent storage id -> %s", permanentStorage.getId()));
 
         dto.setIds(Arrays.stream(ids.split(Constants.COMMA_REGEX))
@@ -123,7 +108,6 @@ public class ResourcesServiceImpl implements ResourcesService {
                 .map(Optional::get)
                 .filter(file -> !file.isDeleted())
                 .peek(file -> file.setDeleted(true))
-                .peek(file -> awsUtil.deleteFile(file.getId() + Constants.UNDERSCORE + file.getName(), stagingStorage.getBucket()))
                 .peek(file -> awsUtil.deleteFile(file.getId() + Constants.UNDERSCORE + file.getName(), permanentStorage.getBucket()))
                 .map(repository::save)
                 .map(Resource::getId)

@@ -1,6 +1,45 @@
 version: '3.7'
 
 services:
+  elasticsearch:
+    image: elasticsearch:8.6.0
+    container_name: elasticsearch
+    env_file:
+      - env/elastic.env
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+
+  logstash:
+    image: logstash:8.6.0
+    container_name: logstash
+    volumes:
+      - type: bind
+        source: ./logstash/config
+        target: /usr/share/logstash/pipeline
+        read_only: true
+      - type: bind
+        source: C:/Users/Islomjon_Domlajonov/Desktop/msa-courses/resource-service/docker/logstash/log
+        target: /logstash/logs/docker
+    command: logstash -f pipeline/logstash.conf
+    env_file:
+      - env/logstash.env
+    depends_on:
+      - elasticsearch
+    ports:
+      - "9600:9600"
+
+  kibana:
+    image: kibana:8.6.0
+    container_name: kibana
+    restart: always
+    ports:
+      - "5601:5601"
+    env_file:
+      - env/kibana.env
+    depends_on:
+      - elasticsearch
+
   zookeeper:
     image: elevy/zookeeper:latest
     container_name: zookeeper
@@ -36,6 +75,8 @@ services:
       - "8761:8761"
     env_file:
       - env/service-discovery.env
+    volumes:
+      - C:/Users/Islomjon_Domlajonov/Desktop/msa-courses/resource-service/docker/logstash/log:/logs
 
   api-gateway:
     image: api-gateway
@@ -50,9 +91,12 @@ services:
       - song-service
     env_file:
       - env/api-gateway.env
+    volumes:
+      - C:/Users/Islomjon_Domlajonov/Desktop/msa-courses/resource-service/docker/logstash/log:/logs
 
   resource-processor:
     image: 'resource-processor.jar'
+    restart: always
     container_name: 'resource-processor'
     build:
       context: .
@@ -62,11 +106,12 @@ services:
     depends_on:
       - song-service
       - resource-service
-      - kafka
-    links:
       - service-configuration
+      - kafka
     env_file:
       - env/resource-processor.env
+    volumes:
+      - C:/Users/Islomjon_Domlajonov/Desktop/msa-courses/resource-service/docker/logstash/log:/logs
 
   msa_resources_db:
     image: 'postgres:14-alpine3.14'
@@ -89,6 +134,8 @@ services:
       - eureka-server
     env_file:
       - env/resource-service.env
+    volumes:
+      - C:/Users/Islomjon_Domlajonov/Desktop/msa-courses/resource-service/docker/logstash/log:/logs
 
   song_service_db:
     image: 'postgres:14-alpine3.14'
@@ -110,6 +157,8 @@ services:
       - eureka-server
     env_file:
       - env/song-service.env
+    volumes:
+      - C:/Users/Islomjon_Domlajonov/Desktop/msa-courses/resource-service/docker/logstash/log:/logs
 
   storage_service_db:
     image: 'postgres:14-alpine3.14'
