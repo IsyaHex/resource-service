@@ -17,7 +17,7 @@ import uz.epam.msa.resource.dto.ResourceDTO;
 import uz.epam.msa.resource.repository.ResourcesRepository;
 import uz.epam.msa.resource.service.ResourcesService;
 import uz.epam.msa.resource.util.AwsUtil;
-import uz.epam.msa.resource.util.MicroserviceUtil;
+import uz.epam.msa.resource.util.StorageManager;
 import uz.epam.msa.resource.util.ResourceUtil;
 
 import javax.naming.SizeLimitExceededException;
@@ -45,11 +45,11 @@ public class ResourcesServiceImplTest {
     @Mock
     private ResourceUtil resourceUtil;
     @Mock
-    private MicroserviceUtil microserviceUtil;
+    private StorageManager storageManager;
 
     @BeforeEach
     void init () {
-        service = new ResourcesServiceImpl(repository, mapper, s3Client, awsUtil, resourceUtil, microserviceUtil);
+        service = new ResourcesServiceImpl(repository, mapper, s3Client, awsUtil, resourceUtil, storageManager);
     }
 
     @Test
@@ -70,39 +70,13 @@ public class ResourcesServiceImplTest {
         storageDTO.setStorageType("testStorageType");
 
         resourceUtil.getCircuitBreakerObject(
-                microserviceUtil::getPermanentStorage, microserviceUtil.getPermanentStorageFallBack());
+                storageManager::getPermanentStorage, storageManager.getPermanentStorageFallBack());
 
         when(repository.findById(0)).thenReturn(Optional.of(resource));
         when(awsUtil.downloadFile(fileName, bucketName)).thenReturn(new byte[]{});
         when(resourceUtil.getCircuitBreakerObject(any(), any())).thenReturn(storageDTO);
 
         ResourceDTO result = service.findById(0);
-
-        assertEquals(dto, result);
-    }
-
-    @Test
-    void findByIdInternal() {
-        String contentType = "audio/mpeg";
-        Resource resource = getResource();
-        String fileName = resource.getId() + "_" + resource.getName();
-        String bucketName = "testBucket";
-
-        ResourceDTO dto = new ResourceDTO();
-        dto.setResource(new byte[]{});
-        dto.setContentType(contentType);
-
-        GetStorageDTO storageDTO = new GetStorageDTO();
-        storageDTO.setId(-1);
-        storageDTO.setPath("");
-        storageDTO.setBucket("testBucket");
-        storageDTO.setStorageType("testStorageType");
-
-        when(repository.findById(0)).thenReturn(Optional.of(resource));
-        when(awsUtil.downloadFile(fileName, bucketName)).thenReturn(new byte[]{});
-        when(resourceUtil.getCircuitBreakerObject(any(), any())).thenReturn(storageDTO);
-
-        ResourceDTO result = service.findByIdInternal(0);
 
         assertEquals(dto, result);
     }

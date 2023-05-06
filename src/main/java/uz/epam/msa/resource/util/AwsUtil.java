@@ -8,7 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import uz.epam.msa.resource.constant.Constants;
 import uz.epam.msa.resource.dto.GetStorageDTO;
-import uz.epam.msa.resource.exception.InternalServerErrorException;
 import uz.epam.msa.resource.exception.ResourceNotFoundException;
 
 import java.io.IOException;
@@ -18,26 +17,25 @@ import java.io.IOException;
 public class AwsUtil {
 
     private final AmazonS3 s3Client;
-    private final MicroserviceUtil microserviceUtil;
-
+    private final StorageManager storageManager;
     private final ResourceUtil resourceUtil;
 
-    public AwsUtil(AmazonS3 s3Client, MicroserviceUtil microserviceUtil, ResourceUtil resourceUtil) {
+    public AwsUtil(AmazonS3 s3Client, StorageManager storageManager, ResourceUtil resourceUtil) {
         this.s3Client = s3Client;
-        this.microserviceUtil = microserviceUtil;
+        this.storageManager = storageManager;
         this.resourceUtil = resourceUtil;
     }
 
     public byte[] downloadFile(String fileName, String bucketName) {
         GetStorageDTO stagingStorage = resourceUtil.getCircuitBreakerObject(
-                microserviceUtil::getStagingStorage, microserviceUtil.getStagingStorageFallBack());
+                storageManager::getStagingStorage, storageManager.getStagingStorageFallBack());
         log.info(String.format("Staging storage id -> %s", stagingStorage.getId()));
         try {
-            return getObjectFromBucket(bucketName, fileName, stagingStorage);
+            return getObjectFromBucket(bucketName, fileName);
         } catch (Exception e) {
             log.info(e.getMessage());
             try {
-                return getObjectFromBucket(stagingStorage.getBucket(), fileName, stagingStorage);
+                return getObjectFromBucket(stagingStorage.getBucket(), fileName);
             } catch (Exception ex) {
                 log.error(ex.getMessage());
                 throw new ResourceNotFoundException(Constants.RESOURCE_NOT_FOUND_EXCEPTION);
@@ -45,39 +43,17 @@ public class AwsUtil {
         }
     }
 
-    private byte[] getObjectFromBucket(String bucketName, String fileName, GetStorageDTO storageDTO) throws IOException {
+    private byte[] getObjectFromBucket(String bucketName, String fileName) throws IOException {
         S3Object s3Object = s3Client.getObject(bucketName, fileName);
         try(S3ObjectInputStream inputStream = s3Object.getObjectContent()) {
             log.info(fileName);
-            if (bucketName.equals(storageDTO.getBucket())) {
-                moveFileToPermanentBucket(fileName);
-            }
             return IOUtils.toByteArray(inputStream);
         }
     }
 
-    private void moveFileToPermanentBucket(String fileName) {
-        try {
-            GetStorageDTO stagingStorage = resourceUtil.getCircuitBreakerObject(
-                    microserviceUtil::getStagingStorage, microserviceUtil.getStagingStorageFallBack());
-            GetStorageDTO permanentStorage = resourceUtil.getCircuitBreakerObject(
-                    microserviceUtil::getPermanentStorage, microserviceUtil.getPermanentStorageFallBack());
-            log.info(String.format("Staging storage id -> %s", stagingStorage.getId()));
-            log.info(String.format("Permanent storage id -> %s", permanentStorage.getId()));
-
-            s3Client.copyObject(stagingStorage.getBucket(), fileName, permanentStorage.getBucket(), fileName);
-            log.info(String.format(
-                    Constants.LOG_COPY_FILE_BETWEEN_BUCKETS,
-                    fileName, stagingStorage.getBucket(), permanentStorage.getBucket()));
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            throw new InternalServerErrorException();
-        }
-    }
 
     public void deleteFile(String fileName, String bucketName) {
         log.info(fileName);
         s3Client.deleteObject(bucketName, fileName);
     }
-
 }
