@@ -137,6 +137,7 @@ public class ResourcesServiceImplTest {
         resource.setName("test");
         resource.setDeleted(false);
         resource.setContentType("audio/mpeg");
+        resource.setStatus("PERMANENT");
 
         return resource;
     }

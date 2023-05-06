@@ -55,6 +55,7 @@ public class ResourceServiceIntegrationTest {
         resource.setDeleted(false);
         resource.setName("test-name");
         resource.setContentType("test/content");
+        resource.setStatus("PERMANENT");
         repository.save(resource);
     }
 
