@@ -15,7 +15,7 @@ import java.io.IOException;
 
 @Component
 @Slf4j
-public class Consumer {
+public class ResourceConsumer {
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -32,7 +32,6 @@ public class Consumer {
     @KafkaListener(topics = "resources-response-topic")
     public void consume(String message) {
         log.info(String.format(Constants.RECEIVED_RESOURCE_ID, message));
-        log.info("it works!" + message);
         try {
             int resourceId = objectMapper.readValue(message, int.class);
             moveFileToPermanentBucket(resourceId);
@@ -43,7 +42,7 @@ public class Consumer {
 
     private void moveFileToPermanentBucket(int resourceId) {
         try {
-            String fileName = resourceId + Constants.UNDERSCORE + fileService.getFileName(resourceId);
+            String fileName = String.format(Constants.FILE_ID_PATTERN, resourceId, fileService.getFileName(resourceId));
 
             GetStorageDTO stagingStorage = resourceUtil.getCircuitBreakerObject(
                     storageManager::getStagingStorage, storageManager.getStagingStorageFallBack());

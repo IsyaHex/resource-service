@@ -63,7 +63,7 @@ public class ResourcesServiceImpl implements ResourcesService {
                 resourceUtil.getCircuitBreakerObject(storageManager::getPermanentStorage, storageManager.getPermanentStorageFallBack());
         log.info(String.format("Permanent storage id -> %s", storage.getId()));
         return new ResourceDTO(resource.getContentType(),
-                awsUtil.downloadFile(resource.getId() + Constants.UNDERSCORE + resource.getName(), storage.getBucket()));
+                awsUtil.downloadFile(String.format(Constants.FILE_ID_PATTERN, resource.getId(), resource.getName()), storage.getBucket()));
     }
 
     @Override
@@ -83,7 +83,7 @@ public class ResourcesServiceImpl implements ResourcesService {
             GetStorageDTO stagingStorage = resourceUtil.getCircuitBreakerObject(
                     storageManager::getStagingStorage, storageManager.getStagingStorageFallBack());
             s3Client.putObject(new PutObjectRequest(stagingStorage.getBucket(),
-                    resource.getId() + Constants.UNDERSCORE + resource.getName(), file));
+                    String.format(Constants.FILE_ID_PATTERN, resource.getId(), resource.getName()), file));
             file.delete();
             log.info(String.format("Staging storage id -> %s", stagingStorage.getId()));
         } catch (Exception e) {
@@ -108,7 +108,7 @@ public class ResourcesServiceImpl implements ResourcesService {
                 .map(Optional::get)
                 .filter(file -> !file.isDeleted())
                 .peek(file -> file.setDeleted(true))
-                .peek(file -> awsUtil.deleteFile(file.getId() + Constants.UNDERSCORE + file.getName(), permanentStorage.getBucket()))
+                .peek(file -> awsUtil.deleteFile(String.format(Constants.FILE_ID_PATTERN, file.getId(), file.getName()), permanentStorage.getBucket()))
                 .map(repository::save)
                 .map(Resource::getId)
                 .collect(Collectors.toList()));

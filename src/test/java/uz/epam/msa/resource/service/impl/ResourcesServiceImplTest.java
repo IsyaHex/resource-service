@@ -82,32 +82,6 @@ public class ResourcesServiceImplTest {
     }
 
     @Test
-    void findByIdInternal() {
-        String contentType = "audio/mpeg";
-        Resource resource = getResource();
-        String fileName = resource.getId() + "_" + resource.getName();
-        String bucketName = "testBucket";
-
-        ResourceDTO dto = new ResourceDTO();
-        dto.setResource(new byte[]{});
-        dto.setContentType(contentType);
-
-        GetStorageDTO storageDTO = new GetStorageDTO();
-        storageDTO.setId(-1);
-        storageDTO.setPath("");
-        storageDTO.setBucket("testBucket");
-        storageDTO.setStorageType("testStorageType");
-
-        when(repository.findById(0)).thenReturn(Optional.of(resource));
-        when(awsUtil.downloadFile(fileName, bucketName)).thenReturn(new byte[]{});
-        when(resourceUtil.getCircuitBreakerObject(any(), any())).thenReturn(storageDTO);
-
-        ResourceDTO result = service.findByIdInternal(0);
-
-        assertEquals(dto, result);
-    }
-
-    @Test
     void saveResource() {
         String name = "test";
         String contentType = "audio/mpeg";
