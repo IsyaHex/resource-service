@@ -5,6 +5,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import uz.epam.msa.resource.constant.Constants;
 import uz.epam.msa.resource.dto.AudioDataBinaryDTO;
 import uz.epam.msa.resource.dto.DeletedResourcesDTO;
 import uz.epam.msa.resource.dto.ResourceDTO;
@@ -14,7 +15,10 @@ import uz.epam.msa.resource.service.ResourcesService;
 import uz.epam.msa.resource.util.ResourceProducer;
 import uz.epam.msa.resource.util.ResourceUtil;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.Max;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @RestController
@@ -24,11 +28,13 @@ public class ResourceServiceController {
     private final ResourcesService service;
     private final ResourceUtil util;
     private final ResourceProducer producer;
+    private final HttpServletRequest request;
 
-    public ResourceServiceController(ResourcesService service, ResourceUtil generator, ResourceProducer producer) {
+    public ResourceServiceController(ResourcesService service, ResourceUtil generator, ResourceProducer producer, HttpServletRequest request) {
         this.service = service;
         this.util = generator;
         this.producer = producer;
+        this.request = request;
     }
 
     @PostMapping(
@@ -37,7 +43,10 @@ public class ResourceServiceController {
     public ResponseEntity<AudioDataBinaryDTO> uploadResource(@RequestParam("file") MultipartFile data) throws ResourceValidationException {
         AudioDataBinaryDTO dto = service.saveResource(data);
         dto.setPath(util.createFileDownloadLink(dto.getId()));
-        producer.sendMessage(dto.getId());
+        List<String> list = new ArrayList<>();
+        list.add(String.valueOf(dto.getId()));
+        list.add(request.getHeader(Constants.AUTHORIZATION));
+        producer.sendMessage(list.toString());
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 

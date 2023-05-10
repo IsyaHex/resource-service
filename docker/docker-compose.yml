@@ -57,6 +57,14 @@ services:
     links:
       - zookeeper:zookeeper
 
+  auth-server:
+    build:
+      dockerfile: AuthDockerFile
+    image: auth-server.jar
+    container_name: auth-server
+    ports:
+      - "1116:1116"
+
   service-configuration:
     build:
       dockerfile: ServiceConfigDockerFile
@@ -89,6 +97,7 @@ services:
       - eureka-server
       - resource-service
       - song-service
+      - auth-server
     env_file:
       - env/api-gateway.env
     volumes:
@@ -132,6 +141,7 @@ services:
       - msa_resources_db
       - kafka
       - eureka-server
+      - auth-server
     env_file:
       - env/resource-service.env
     volumes:
@@ -155,6 +165,7 @@ services:
     depends_on:
       - song_service_db
       - eureka-server
+      - auth-server
     env_file:
       - env/song-service.env
     volumes:
@@ -178,5 +189,6 @@ services:
     depends_on:
       - storage_service_db
       - eureka-server
+      - auth-server
     env_file:
       - env/storage-service.env

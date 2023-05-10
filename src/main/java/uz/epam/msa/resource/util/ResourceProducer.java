@@ -20,10 +20,10 @@ public class ResourceProducer {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    public void sendMessage(Integer resourceId) {
-        log.info(String.format(Constants.RECEIVED_RESOURCE_ID, resourceId));
-        Message<Integer> message = MessageBuilder
-                .withPayload(resourceId)
+    public void sendMessage(String data) {
+        log.info(String.format(Constants.RECEIVED_RESOURCE_ID, data));
+        Message<String> message = MessageBuilder
+                .withPayload(data)
                 .setHeader(KafkaHeaders.TOPIC, topic.name())
                 .build();
         kafkaTemplate.send(message);

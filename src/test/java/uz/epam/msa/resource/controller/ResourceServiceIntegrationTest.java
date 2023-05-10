@@ -16,6 +16,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import uz.epam.msa.resource.ResourceServiceApplication;
+import uz.epam.msa.resource.configuration.TestSecurityConfig;
 import uz.epam.msa.resource.constant.Constants;
 import uz.epam.msa.resource.domain.Resource;
 import uz.epam.msa.resource.dto.DeletedResourcesDTO;
@@ -30,7 +31,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(classes = ResourceServiceApplication.class, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(
+        classes = {ResourceServiceApplication.class, TestSecurityConfig.class},
+        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @TestPropertySource(locations = "classpath:application-integration-test.properties")
 @AutoConfigureMockMvc
 public class ResourceServiceIntegrationTest {

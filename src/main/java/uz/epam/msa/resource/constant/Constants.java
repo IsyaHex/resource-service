@@ -18,6 +18,8 @@ public class Constants {
     public static final String AUDIO_FILE_CONTENT_TYPE = "audio/mpeg";
     public static final String STAGING = "STAGING";
     public static final String PERMANENT = "PERMANENT";
+
+    public static final String AUTHORIZATION = "authorization";
     public static final String LOG_COPY_FILE_BETWEEN_BUCKETS = "Copy the file: %s from the %s to the %s";
     public static final String CIRCUIT_BREAKER_CONFIG_NAME = "STORAGE_SERVICE_GET_STORAGES";
     public static final String STAGING_BUCKET = "msa-resources-bucket-staging";
